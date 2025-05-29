@@ -25,7 +25,7 @@ streamlit run app.py
 | **7. Training – stage 2** | **Fine-tune** last 30 convolutional layers | Unfroze layers -30: , re-compiled with `Adam(lr = 1e-5)` and same callbacks |
 | **8. Evaluation** | Tested on the 10 % hold-out set | Metrics: Accuracy, ROC-AUC, confusion matrix |
 | **9. Results** | Accuracy ≈ **95.7 %**, AUC ≈ **0.99** | Confusion matrix:<br> TN = 130   FP = 4  <br> FN = 19   TP = 373 |
-| **10. Save** | Exported single-file archive | `model.save("resnet50_pneumonia.keras")` (≈100 MB) |
+| **10. Save** | Exported single-file archive | `model.save("resnet50_pneumonia.keras")` (≈200 MB) |
 
 ### Key take-aways
 * **High recall on Pneumonia (0.95)** – catches 95 % of true cases.  
