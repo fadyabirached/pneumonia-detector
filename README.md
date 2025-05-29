@@ -11,7 +11,7 @@ git clone https://github.com/<your-user>/pneumonia-detector.git
 cd pneumonia-detector
 # drop the model file next to app.py
 streamlit run app.py
-
+```
 ## 📈 Model-building pipeline
 
 | Phase | What I did | 🔍 Details |
