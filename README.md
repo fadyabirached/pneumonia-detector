@@ -1,4 +1,3 @@
-![Screenshot 2025-05-30 105032](https://github.com/user-attachments/assets/07b6d1be-c822-463a-b140-d25b28e679f2)
 # 🩺 Pneumonia-Detector (ResNet-50)
 
 A Streamlit web-app that classifies chest X-ray images as **Normal** or **Pneumonia** using a fine-tuned ResNet-50 model.
@@ -37,3 +36,5 @@ streamlit run app.py
 # quick load example
 from tensorflow.keras.models import load_model
 model = load_model("resnet50_pneumonia.keras")
+```
+![Screenshot 2025-05-30 105032](https://github.com/user-attachments/assets/07b6d1be-c822-463a-b140-d25b28e679f2)
