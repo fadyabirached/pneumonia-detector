@@ -6,12 +6,12 @@ A Streamlit web-app that classifies chest X-ray images as **Normal** or **Pneumo
 
 ## Quick start
 
-# in Jupyter
+in Jupyter
 open "pneumonia detector notebook.ipynb"
-# run all cells to:
-#   - preprocess the data
-#   - train the ResNet-50 model
-#   - export resnet50_pneumonia.keras either normal or zip download
+ run all cells to:
+   - preprocess the data
+   - train the ResNet-50 model
+   - export resnet50_pneumonia.keras either normal or zip download
 
 ```bash
 git clone https://github.com/<your-user>/pneumonia-detector.git
