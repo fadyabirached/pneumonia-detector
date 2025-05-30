@@ -6,10 +6,17 @@ A Streamlit web-app that classifies chest X-ray images as **Normal** or **Pneumo
 
 ## Quick start
 
+# in Jupyter
+open "pneumonia detector notebook.ipynb"
+# run all cells to:
+#   - preprocess the data
+#   - train the ResNet-50 model
+#   - export resnet50_pneumonia.keras either normal or zip download
+
 ```bash
 git clone https://github.com/<your-user>/pneumonia-detector.git
 cd pneumonia-detector
-# drop the model file next to app.py
+# drop the model file next to app.py folder
 streamlit run app.py
 ```
 ## 📈 Model-building pipeline
@@ -32,9 +39,4 @@ streamlit run app.py
 * **Very low false-alarm rate** – only 4 healthy scans flagged as sick.  
 * Pure Keras `.keras` file → drop-in loadable with `tf.keras.models.load_model`.
 
-```bash
-# quick load example
-from tensorflow.keras.models import load_model
-model = load_model("resnet50_pneumonia.keras")
-```
 ![Screenshot 2025-05-30 105032](https://github.com/user-attachments/assets/07b6d1be-c822-463a-b140-d25b28e679f2)
