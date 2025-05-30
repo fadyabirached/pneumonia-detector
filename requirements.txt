@@ -1,4 +1,4 @@
 streamlit>=1.32.0
-tensorflow-cpu==2.16.1     # or tensorflow==2.16.1 if you’ll use a GPU
+tensorflow-cpu==2.16.0     
 pillow>=10.2.0
 numpy>=1.25
