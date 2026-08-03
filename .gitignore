@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+
+# Trained model artifact — too large for git (~200 MB).
+# Produce it locally by running pneumonia_detector.ipynb.
+*.keras
+resnet50_pneumonia.zip
+
+# Dataset downloads (Kaggle CLI output)
+coronahack_chest_xray/
+*.csv
+
+# OS / editor
+.DS_Store
+.ipynb_checkpoints/

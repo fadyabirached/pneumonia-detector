@@ -1,0 +1,7 @@
+# Lint the application code; the training notebook is exploratory
+# Colab/Kaggle code and is intentionally excluded from style checks.
+extend-exclude = ["*.ipynb"]
+line-length = 110
+
+[lint]
+select = ["E", "F", "I"]
