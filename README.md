@@ -48,12 +48,17 @@ To get a model file, either:
 
 ### 1. Train the model
 
-Open `pneumonia_detector.ipynb` in Jupyter or Google Colab and run all cells. This will:
+The notebook is written for **Google Colab**, not local Jupyter — the first data cell calls `google.colab.files.upload()`, which only exists in Colab. Running it in local Jupyter will fail at that cell with `ModuleNotFoundError: No module named 'google'` unless you replace that cell with a plain file path.
 
-- download and clean the dataset,
-- preprocess and augment the images,
-- train the ResNet-50 model in two stages,
-- export `resnet50_pneumonia.keras` (downloadable directly or as a zip).
+No dataset or credentials are bundled with this repo — the notebook pulls the [Coronahack Chest X-Ray dataset](https://www.kaggle.com/datasets/praveengovi/coronahack-chest-xraydataset) live from Kaggle. Before running it, you need:
+
+1. A free [Kaggle account](https://www.kaggle.com), with an API token: **Kaggle → your profile → Account → Create New API Token**. This downloads a `kaggle.json` file.
+2. Open `pneumonia_detector.ipynb` in Google Colab and run the cells in order:
+   - The `files.upload()` cell prompts you to upload that `kaggle.json` — this is what authenticates the next cell's `kaggle datasets download`.
+   - The following cells clean, resize, and augment the images, then train the ResNet-50 model in two stages.
+3. The last cell exports `resnet50_pneumonia.keras` (~200 MB), downloadable directly or as a zip.
+
+Training end-to-end (dataset download + both fine-tuning stages) takes a while on Colab's free-tier GPU — budget at least 30–60 minutes.
 
 ### 2. Run the app
 
