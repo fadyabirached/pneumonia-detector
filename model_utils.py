@@ -17,17 +17,22 @@ IMAGE_SIZE = (224, 224)
 
 
 def prepare_image(img: Image.Image) -> np.ndarray:
-    """Convert a PIL image into a ResNet50-ready ``(1, 224, 224, 3)`` batch.
+    """Convert a PIL image into a ``(1, 224, 224, 3)`` batch for the model.
 
-    Applies the same RGB conversion, resize, and ImageNet preprocessing
-    used at training time.
+    RGB conversion and resize only, no rescaling or channel normalization.
+    That looks wrong for a ResNet50 (the standard advice is to run inputs
+    through ``keras.applications.resnet50.preprocess_input``), but the
+    training notebook's ``ImageDataGenerator`` calls (cell 10) set neither
+    ``rescale`` nor ``preprocessing_function``, so the model was trained on
+    raw 0-255 pixel values. Applying ``preprocess_input`` here previously
+    fed it RGB-to-BGR-converted, ImageNet-mean-subtracted values instead,
+    a distribution the model never saw during training. Matching the
+    generators exactly, not "correct" preprocessing in the abstract, is
+    what makes served predictions match the notebook's reported metrics.
     """
-    from tensorflow.keras.applications.resnet50 import preprocess_input
-
     img = img.convert("RGB").resize(IMAGE_SIZE)
     x = np.array(img, dtype=np.float32)
     x = np.expand_dims(x, axis=0)  # (1, 224, 224, 3)
-    x = preprocess_input(x)
     return x
 
 
@@ -40,7 +45,7 @@ def predicted_class(probability: float, threshold: float = 0.5) -> str:
 def load_trained_model(path: str = MODEL_PATH):
     """Load the trained `.keras` model, failing with a clear message if missing.
 
-    The model file is not committed to the repo (too large for git) — see
+    The model file is not committed to the repo (too large for git), see
     the README for how to produce it by running the training notebook.
     """
     if not os.path.exists(path):

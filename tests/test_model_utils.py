@@ -31,13 +31,7 @@ def test_predicted_class_respects_custom_threshold():
     assert model_utils.predicted_class(0.4, threshold=0.6) == "Normal"
 
 
-def test_prepare_image_produces_expected_shape_and_dtype(monkeypatch):
-    # Stand in for tensorflow.keras.applications.resnet50.preprocess_input
-    # so this test doesn't need a real TensorFlow install.
-    fake_resnet50 = types.ModuleType("tensorflow.keras.applications.resnet50")
-    fake_resnet50.preprocess_input = lambda x: x  # identity, we only check shape/dtype
-    monkeypatch.setitem(sys.modules, "tensorflow.keras.applications.resnet50", fake_resnet50)
-
+def test_prepare_image_produces_expected_shape_and_dtype():
     # Non-square grayscale input, like a raw chest X-ray, to exercise the
     # RGB conversion + resize path.
     img = Image.new("L", (300, 150), color=128)
@@ -48,21 +42,37 @@ def test_prepare_image_produces_expected_shape_and_dtype(monkeypatch):
     assert batch.dtype == np.float32
 
 
-def test_prepare_image_calls_resnet_preprocess_input(monkeypatch):
-    calls = []
+def test_prepare_image_leaves_pixel_values_unrescaled():
+    # Regression test: the training notebook's ImageDataGenerator calls
+    # (cell 10) set neither `rescale` nor `preprocessing_function`, so the
+    # model trained on raw 0-255 pixel values. prepare_image used to run
+    # inputs through keras.applications.resnet50.preprocess_input, which
+    # RGB-to-BGR-converts and ImageNet-mean-subtracts, a distribution the
+    # model never saw. A flat mid-grey input should come back as exactly
+    # that value, not shifted/reordered by a preprocessing step the
+    # training pipeline never applied.
+    img = Image.new("RGB", (50, 50), color=(200, 100, 50))
 
-    def fake_preprocess_input(x):
-        calls.append(x.shape)
-        return x
+    batch = model_utils.prepare_image(img)
 
-    fake_resnet50 = types.ModuleType("tensorflow.keras.applications.resnet50")
-    fake_resnet50.preprocess_input = fake_preprocess_input
-    monkeypatch.setitem(sys.modules, "tensorflow.keras.applications.resnet50", fake_resnet50)
+    assert batch[0, 0, 0, 0] == pytest.approx(200.0)  # R
+    assert batch[0, 0, 0, 1] == pytest.approx(100.0)  # G
+    assert batch[0, 0, 0, 2] == pytest.approx(50.0)   # B
+    assert batch.min() >= 0.0
+    assert batch.max() <= 255.0
 
-    img = Image.new("RGB", (50, 50), color=(10, 20, 30))
-    model_utils.prepare_image(img)
 
-    assert calls == [(1, 224, 224, 3)]
+def test_prepare_image_needs_no_tensorflow_import(monkeypatch):
+    # prepare_image previously imported keras.applications.resnet50 for
+    # preprocess_input. Blocking `import tensorflow` entirely and confirming
+    # this still works proves that import is gone for good, not just
+    # unused by coincidence in this test run.
+    monkeypatch.setitem(sys.modules, "tensorflow", None)
+
+    img = Image.new("RGB", (10, 10), color=(1, 2, 3))
+    batch = model_utils.prepare_image(img)
+
+    assert batch.shape == (1, 224, 224, 3)
 
 
 def test_load_trained_model_missing_file_raises_clear_error(tmp_path):
@@ -87,6 +97,6 @@ def test_load_trained_model_delegates_to_keras_load_model(monkeypatch, tmp_path)
 
 
 def test_class_names_order_matches_pneumonia_positive_class():
-    # app.py treats index 1 / the positive class as "Pneumonia" — pin this
+    # app.py treats index 1 / the positive class as "Pneumonia", pin this
     # down since a reordering would silently flip predictions.
     assert model_utils.CLASS_NAMES == ["Normal", "Pneumonia"]

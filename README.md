@@ -9,7 +9,7 @@ A Streamlit web app that classifies chest X-ray images as **Normal** or **Pneumo
 | Phase | What I did | Details |
 |---|---|---|
 | 1. Data split | Stratified 80 / 10 / 10 split into train / validation / test | Preserves the Normal / Pneumonia ratio in every subset for fair metrics |
-| 2. Pre-processing | 224 x 224 RGB resize + normalization | Keeps input consistent with ImageNet-pretrained networks |
+| 2. Pre-processing | 224 x 224 RGB resize, no rescaling | `ImageDataGenerator` sets neither `rescale` nor `preprocessing_function`, so the model trains on raw 0-255 pixel values; `model_utils.prepare_image` matches this exactly at inference |
 | 3. Data augmentation | `ImageDataGenerator` on the fly | `brightness_range=[0.7, 1.3]`, `zoom_range=0.2`, `horizontal_flip=True` |
 | 4. Class weights | Inverse-frequency `{0: w_normal, 1: w_pneumonia}` | Penalizes misclassifying the rarer class (Normal) |
 | 5. Architecture | ResNet-50 backbone (ImageNet weights, frozen) + custom head | `GlobalAveragePooling2D -> BatchNorm -> Dense(256, ReLU) -> Dropout(0.5) -> Dense(1, sigmoid)` |
@@ -48,17 +48,17 @@ To get a model file, either:
 
 ### 1. Train the model
 
-The notebook is written for **Google Colab**, not local Jupyter — the first data cell calls `google.colab.files.upload()`, which only exists in Colab. Running it in local Jupyter will fail at that cell with `ModuleNotFoundError: No module named 'google'` unless you replace that cell with a plain file path.
+The notebook is written for **Google Colab**, not local Jupyter: the first data cell calls `google.colab.files.upload()`, which only exists in Colab. Running it in local Jupyter will fail at that cell with `ModuleNotFoundError: No module named 'google'` unless you replace that cell with a plain file path.
 
-No dataset or credentials are bundled with this repo — the notebook pulls the [Coronahack Chest X-Ray dataset](https://www.kaggle.com/datasets/praveengovi/coronahack-chest-xraydataset) live from Kaggle. Before running it, you need:
+No dataset or credentials are bundled with this repo, the notebook pulls the [Coronahack Chest X-Ray dataset](https://www.kaggle.com/datasets/praveengovi/coronahack-chest-xraydataset) live from Kaggle. Before running it, you need:
 
 1. A free [Kaggle account](https://www.kaggle.com), with an API token: **Kaggle → your profile → Account → Create New API Token**. This downloads a `kaggle.json` file.
 2. Open `pneumonia_detector.ipynb` in Google Colab and run the cells in order:
-   - The `files.upload()` cell prompts you to upload that `kaggle.json` — this is what authenticates the next cell's `kaggle datasets download`.
+   - The `files.upload()` cell prompts you to upload that `kaggle.json`, this is what authenticates the next cell's `kaggle datasets download`.
    - The following cells clean, resize, and augment the images, then train the ResNet-50 model in two stages.
 3. The last cell exports `resnet50_pneumonia.keras` (~200 MB), downloadable directly or as a zip.
 
-Training end-to-end (dataset download + both fine-tuning stages) takes a while on Colab's free-tier GPU — budget at least 30–60 minutes.
+Training end-to-end (dataset download + both fine-tuning stages) takes a while on Colab's free-tier GPU, budget at least 30-60 minutes.
 
 ### 2. Run the app
 
