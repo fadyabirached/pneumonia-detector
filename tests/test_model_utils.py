@@ -75,7 +75,8 @@ def test_prepare_image_needs_no_tensorflow_import(monkeypatch):
     assert batch.shape == (1, 224, 224, 3)
 
 
-def test_load_trained_model_missing_file_raises_clear_error(tmp_path):
+def test_load_trained_model_missing_file_raises_clear_error(monkeypatch, tmp_path):
+    monkeypatch.delenv(model_utils.HF_MODEL_REPO_ENV, raising=False)
     missing_path = tmp_path / "does_not_exist.keras"
 
     with pytest.raises(FileNotFoundError, match="Model file not found"):
@@ -94,6 +95,86 @@ def test_load_trained_model_delegates_to_keras_load_model(monkeypatch, tmp_path)
     result = model_utils.load_trained_model(str(model_file))
 
     assert result is sentinel_model
+
+
+def test_load_trained_model_downloads_from_hub_when_local_file_missing(monkeypatch, tmp_path):
+    missing_path = tmp_path / "resnet50_pneumonia.keras"
+    monkeypatch.setenv(model_utils.HF_MODEL_REPO_ENV, "someuser/pneumonia-detector-resnet50")
+
+    downloaded_path = tmp_path / "downloaded.keras"
+    downloaded_path.write_text("stand-in for the downloaded archive")
+    calls = []
+
+    def fake_hf_hub_download(repo_id, filename):
+        calls.append((repo_id, filename))
+        return str(downloaded_path)
+
+    fake_hub_module = types.ModuleType("huggingface_hub")
+    fake_hub_module.hf_hub_download = fake_hf_hub_download
+    monkeypatch.setitem(sys.modules, "huggingface_hub", fake_hub_module)
+
+    sentinel_model = object()
+    fake_models_module = types.ModuleType("tensorflow.keras.models")
+    fake_models_module.load_model = lambda path: sentinel_model
+    monkeypatch.setitem(sys.modules, "tensorflow.keras.models", fake_models_module)
+
+    result = model_utils.load_trained_model(str(missing_path))
+
+    assert result is sentinel_model
+    # The default filename comes from the local path's basename, matching
+    # what the training notebook actually exports, not a hardcoded guess.
+    assert calls == [("someuser/pneumonia-detector-resnet50", "resnet50_pneumonia.keras")]
+
+
+def test_load_trained_model_prefers_local_file_over_hub(monkeypatch, tmp_path):
+    # A local file should short-circuit before HF_MODEL_REPO is even
+    # consulted, so a deployment with the file already present never
+    # makes a network call it doesn't need.
+    model_file = tmp_path / "fake_model.keras"
+    model_file.write_text("stand-in for a real .keras archive")
+    monkeypatch.setenv(model_utils.HF_MODEL_REPO_ENV, "someuser/pneumonia-detector-resnet50")
+
+    def fail_if_called(repo_id, filename):
+        raise AssertionError("hf_hub_download should not be called when the local file exists")
+
+    fake_hub_module = types.ModuleType("huggingface_hub")
+    fake_hub_module.hf_hub_download = fail_if_called
+    monkeypatch.setitem(sys.modules, "huggingface_hub", fake_hub_module)
+
+    sentinel_model = object()
+    fake_models_module = types.ModuleType("tensorflow.keras.models")
+    fake_models_module.load_model = lambda path: sentinel_model
+    monkeypatch.setitem(sys.modules, "tensorflow.keras.models", fake_models_module)
+
+    result = model_utils.load_trained_model(str(model_file))
+
+    assert result is sentinel_model
+
+
+def test_load_trained_model_respects_custom_hub_filename(monkeypatch, tmp_path):
+    missing_path = tmp_path / "resnet50_pneumonia.keras"
+    monkeypatch.setenv(model_utils.HF_MODEL_REPO_ENV, "someuser/pneumonia-detector-resnet50")
+    monkeypatch.setenv(model_utils.HF_MODEL_FILENAME_ENV, "best_resnet50_finetuned.keras")
+
+    calls = []
+
+    def fake_hf_hub_download(repo_id, filename):
+        calls.append((repo_id, filename))
+        return str(tmp_path / "downloaded.keras")
+
+    (tmp_path / "downloaded.keras").write_text("stand-in")
+
+    fake_hub_module = types.ModuleType("huggingface_hub")
+    fake_hub_module.hf_hub_download = fake_hf_hub_download
+    monkeypatch.setitem(sys.modules, "huggingface_hub", fake_hub_module)
+
+    fake_models_module = types.ModuleType("tensorflow.keras.models")
+    fake_models_module.load_model = lambda path: object()
+    monkeypatch.setitem(sys.modules, "tensorflow.keras.models", fake_models_module)
+
+    model_utils.load_trained_model(str(missing_path))
+
+    assert calls == [("someuser/pneumonia-detector-resnet50", "best_resnet50_finetuned.keras")]
 
 
 def test_class_names_order_matches_pneumonia_positive_class():

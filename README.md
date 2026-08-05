@@ -37,12 +37,19 @@ A Streamlit web app that classifies chest X-ray images as **Normal** or **Pneumo
 
 ## About the model file
 
-The trained model (`resnet50_pneumonia.keras`, ~200 MB) is **not committed to this repository** - it's too large for a normal git repo. `app.py` looks for it in the project root and will show a clear error in the UI if it's missing.
+The trained model (`resnet50_pneumonia.keras`, ~200 MB) is **not committed to this repository** - it's too large for a normal git repo, and too large for Streamlit Cloud's git-based deploy. `model_utils.load_trained_model` checks the project root first; if it's missing there, it downloads the model from Hugging Face Hub instead, provided `HF_MODEL_REPO` is set.
 
-To get a model file, either:
+- **Running locally with the file already in the project root:** nothing to configure, this is the original behavior.
+- **Running without the file (e.g. a fresh clone, or the deployed app):** set two things before starting:
 
-1. **Train it yourself** - run `pneumonia_detector.ipynb` end-to-end (see [Quick start](#quick-start) below), or
-2. **Track it with [Git LFS](https://git-lfs.com/)** if you'd rather version large binaries in git - this repo doesn't use LFS today, but it's a reasonable next step if the model needs to live alongside the code.
+  ```bash
+  export HF_MODEL_REPO="yourusername/pneumonia-detector-resnet50"   # a public HF model repo
+  export HF_MODEL_FILENAME="resnet50_pneumonia.keras"                # optional, this is the default
+  ```
+
+  The first call downloads and caches it (via `huggingface_hub`, which manages its own local cache), so this only touches the network once per machine, not once per request.
+
+To get a model file at all, **train it yourself**, run `pneumonia_detector.ipynb` end to end (see [Quick start](#quick-start) below), then upload the resulting `.keras` file to a public Hugging Face model repo (huggingface.co → New Model → Files → Add file).
 
 ## Quick start
 
@@ -67,10 +74,23 @@ git clone https://github.com/fadyabirached/pneumonia-detector.git
 cd pneumonia-detector
 pip install -r requirements.txt
 
-# place resnet50_pneumonia.keras (produced in step 1) in this directory
+# place resnet50_pneumonia.keras (produced in step 1) in this directory,
+# or export HF_MODEL_REPO instead, see "About the model file" above
 
 streamlit run app.py
 ```
+
+### 3. Deploy your own live demo (Streamlit Community Cloud)
+
+Once the model is uploaded to a public Hugging Face model repo (step 1), this deploys with no code changes:
+
+1. Go to [share.streamlit.io](https://share.streamlit.io), sign in with GitHub, click **New app**.
+2. Pick this repo, branch `main`, main file path `app.py`.
+3. Under **Advanced settings → Secrets**, add:
+   ```toml
+   HF_MODEL_REPO = "yourusername/pneumonia-detector-resnet50"
+   ```
+4. Click **Deploy**. First load downloads and caches the model (~200 MB), so budget a minute or two before the app is responsive.
 
 ## Running the tests
 
