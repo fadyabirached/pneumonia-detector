@@ -1,5 +1,13 @@
 streamlit>=1.32.0
 tensorflow-cpu==2.16.2
+# Pinned explicitly, not left to tensorflow-cpu's own (loose) dependency
+# bound: a .keras file saved under one Keras 3 point-release and loaded
+# under a different one can hit a real deserialization bug where a
+# pretrained backbone nested inside a Sequential model reconstructs with
+# a duplicated input edge ("BatchNormalization expects 1 input but
+# received 2"). pneumonia_detector.ipynb pins this exact version too, so
+# training and serving are always on identical Keras.
+keras==3.15.1
 pillow>=10.2.0
 numpy>=1.25
 huggingface_hub>=0.20.0
