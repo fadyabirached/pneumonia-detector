@@ -43,7 +43,7 @@ The trained model (`resnet50_pneumonia.keras`, ~200 MB) is **not committed to th
 - **Running without the file (e.g. a fresh clone, or the deployed app):** set two things before starting:
 
   ```bash
-  export HF_MODEL_REPO="yourusername/pneumonia-detector-resnet50"   # a public HF model repo
+  export HF_MODEL_REPO="fadyabirached/pneumonia-detector-resnet50"   # a public HF model repo
   export HF_MODEL_FILENAME="resnet50_pneumonia.keras"                # optional, this is the default
   ```
 
@@ -88,7 +88,7 @@ Once the model is uploaded to a public Hugging Face model repo (step 1), this de
 2. Pick this repo, branch `main`, main file path `app.py`.
 3. Under **Advanced settings → Secrets**, add:
    ```toml
-   HF_MODEL_REPO = "yourusername/pneumonia-detector-resnet50"
+   HF_MODEL_REPO = "fadyabirached/pneumonia-detector-resnet50"
    ```
 4. Click **Deploy**. First load downloads and caches the model (~200 MB), so budget a minute or two before the app is responsive.
 
