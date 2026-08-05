@@ -27,6 +27,16 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest ruff numpy pillow
 
+      # A pinned version can be flat-out unpublished (tensorflow-cpu==2.16.0
+      # never existed, only discovered when Streamlit Cloud tried to install
+      # it for real) and the lightweight suite above would never notice,
+      # since it never installs requirements.txt itself. --dry-run resolves
+      # every pin against the real package index without downloading or
+      # installing anything, so this catches that class of bug in seconds
+      # instead of on a deploy.
+      - name: Check requirements.txt pins actually resolve
+        run: pip install --dry-run -r requirements.txt
+
       - name: Lint (app.py, model_utils.py, tests/)
         run: ruff check .
 
